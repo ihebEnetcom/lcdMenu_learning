@@ -79,3 +79,4 @@ LcdMenu &Display::menu()
 {
     return menuInstance;
 }
+

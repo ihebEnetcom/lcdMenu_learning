@@ -22,6 +22,7 @@ public:
     void write(const char *text,
                uint8_t level = 0,
                bool clear = true);
+  
 
     LcdMenu &menu();
 

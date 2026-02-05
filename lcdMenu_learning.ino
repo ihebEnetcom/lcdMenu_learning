@@ -162,46 +162,7 @@ void loop()
         limitSwitch.update();
         greenButton.tick();
       }
-    case 2:
-      display.tick();
-      greenButton.tick();
-      redButton.tick();
-      break;
-    case 3:
-    case 5:
-      greenButton.tick();
-      redButton.tick();
-      break;
-    case 4:
-      if (state < 8) {
-        while (motionControl.runEvasage() || motionControl.runRivetage()) {
-          redButton.tick();
-          limitSwitch.update();
-        }
-        state++;
-        break;
-      }
-      while (motionControl.runEvasage()) {
-        redButton.tick();
-        limitSwitch.update();
-      }
-      state++;
-      showConfig();
-      break;
-    case 6:
-      delay(100);
-      while (motionControl.runRivetage()) {
-        redButton.tick();
-        limitSwitch.update();
-      }
-      motionControl.setPositionEvasage((ladder.evasage[state / 8] / 100.0) - 2.0);
-      while (motionControl.runEvasage()) {
-        redButton.tick();
-        limitSwitch.update();
-      }
-      state += 5;
-      showConfig();
-      break;
+
     case 7:  //error limit switch
       redButton.tick();
       break;
