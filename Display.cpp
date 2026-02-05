@@ -1,6 +1,7 @@
 #include "Display.h"
 
 Display display;
+static char displayBuffer[29];
 
 Display::Display()
     : lcd(0x20, 16, 2),
@@ -19,10 +20,9 @@ void Display::write(const __FlashStringHelper *text,
                     uint8_t level,
                     bool clear)
 {
-    char buffer[29];
-    strncpy_P(buffer, (const char *)text, 29);
-    buffer[28] = '\0';
-    write(buffer, level, clear);
+    strncpy_P(displayBuffer, (const char *)text, sizeof(displayBuffer));
+    displayBuffer[sizeof(displayBuffer) - 1] = '\0';
+    write(displayBuffer, level, clear);
 }
 
 void Display::write(const char *text,
@@ -68,7 +68,13 @@ void Display::write(const char *text,
     }
 }
 
+void Display::render(){
+  menuInstance.show();
+  lcd.clear();
+  menuInstance.refresh();
+}
 LcdMenu &Display::menu()
 {
     return menuInstance;
 }
+

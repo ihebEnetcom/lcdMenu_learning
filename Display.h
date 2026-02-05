@@ -13,6 +13,7 @@ public:
     Display();
 
     void begin();
+    void render();
 
     void write(const __FlashStringHelper *text,
                uint8_t level = 0,
