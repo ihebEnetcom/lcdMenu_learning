@@ -30,48 +30,44 @@ OneButton enterButton;
 OneButton greenButton;
 OneButton redButton;
 
-MENU_SCREEN(modeDroitScreen, modeDroitItems,
+// MENU_SCREEN(modeDroitScreen, modeDroitItems,
+//             ITEM_WIDGET(
+//                 "set", [](float position)
+//                 {
+//                 //positionEvasage = (position - 34.0) / 2;
+//                 motionControl.setPositionEvasage((position - 34.0) * 5.0);
+//                 motionControl.setPositionRivetage((position - 33.6) * 5.0); },
+//                 WIDGET_RANGE(50.0f, 0.05f, 34.0f, 80.0f, "%.2f", 0, false)),
+//             // ITEM_WIDGET(
+//             //     "Riveting", [](float position)
+//             //     {
+//             //     //positionRivetage = (position - 34.0) / 2;
+//             //      },
+//             //     WIDGET_RANGE(50.0f, 0.05f, 33.6f, 80.0f, "%.2f", 0, false))
+
+// );
+std::vector<uint8_t> listItems = {34, 39, 42, 47, 50, 55};
+MENU_SCREEN(fastScreen, fastScreenItems,
             ITEM_WIDGET(
                 "Expanding", [](float position)
                 {
                 //positionEvasage = (position - 34.0) / 2;
                 motionControl.setPositionEvasage((position - 34.0) * 5.0);
-                motionControl.setPositionRivetage((position - 33.6) * 5.0);
-                 },
-                WIDGET_RANGE(50.0f, 0.05f, 34.0f, 80.0f, "%.2f", 0, false)),
-            // ITEM_WIDGET(
-            //     "Riveting", [](float position)
-            //     {
-            //     //positionRivetage = (position - 34.0) / 2;
-            //      },
-            //     WIDGET_RANGE(50.0f, 0.05f, 33.6f, 80.0f, "%.2f", 0, false))
-
-);
-std::vector<uint8_t> listItems = { 34 ,39,42,47,50,55};
-MENU_SCREEN(fastScreen, fastScreenItems,
-    ITEM_WIDGET(
-                "Expanding", [](float position)
-                {
-                //positionEvasage = (position - 34.0) / 2;
-                motionControl.setPositionEvasage((position - 34.0) * 5.0);
-                motionControl.setPositionRivetage((position - 33.6) * 5.0);
-                 },       
-    WIDGET_LIST(listItems, 0, "%d", 0, false))
+                motionControl.setPositionRivetage((position - 33.6) * 5.0); },
+                WIDGET_LIST(listItems, 0, "%d", 0, false))
 
 );
 
 MENU_SCREEN(mainScreen, mainScreenItems,
-            ITEM_SUBMENU("Mode Droit", modeDroitScreen),
-            ITEM_SUBMENU("Mode rapide", fastScreen),
-);
+            // ITEM_SUBMENU("M D", modeDroitScreen),
+            ITEM_SUBMENU("M R", fastScreen), );
 
 void updateState(uint8_t s = 0);
 
-
 void setup()
 {
-    Serial.begin(9600);
-    
+    // Serial.begin(9600);
+
     pinMode(A0, OUTPUT);
     pinMode(A1, OUTPUT);
     pinMode(A2, OUTPUT);
@@ -84,8 +80,8 @@ void setup()
     pinMode(ENTER_PIN, INPUT_PULLUP);
     pinMode(GREEN_BUTTON_PIN, INPUT_PULLUP);
     pinMode(RED_BUTTON_PIN, INPUT_PULLUP);
-    pinMode(LIMIT_SWITCH_PIN,INPUT_PULLUP);
-    
+    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
+
     display.begin();
     //----
     limitSwitch.attach(LIMIT_SWITCH_PIN, INPUT_PULLUP);
@@ -127,60 +123,130 @@ void setup()
         if (state == 9)
         state = 1; });
     redButton.setup(RED_BUTTON_PIN);
-    redButton.attachPress([](){ motionControl.deactivate(); });
-    
-
+    redButton.attachPress([]()
+                          { motionControl.deactivate(); });
 }
 unsigned long lastPrint = 0;
 void loop()
 {
-    
+
     upButton.tick();
     downButton.tick();
     enterButton.tick();
-    
-    if (millis() - lastPrint > 1000) {
-        Serial.print("Current State: ");
-        Serial.println(state);
-        lastPrint = millis();
-    }
+
+    // if (millis() - lastPrint > 1000) {
+    //     Serial.print("Current State: ");
+    //     Serial.println(state);
+    //     lastPrint = millis();
+    // }
     if (!state)
     {
-        
-        display.write(F("\n  Manual Mode"), 1);
+
+        display.write(F("start"), 1);
         state = 8;
     }
-    if(state =8){
+      switch (state % 8) {
+    case 0:  // manual mode
+      greenButton.tick();
+      break;
+    case 1:
+      delay(100);
+      while (state == 9) {
+        // blink the led if the moteur dosen't work in this state
+        if (!(motionControl.runEvasage() || motionControl.runRivetage())) {
+          digitalWrite(GREEN_LED_PIN, LOW);
+          delay(1000);
+          digitalWrite(GREEN_LED_PIN, HIGH);
+          break;
+        }
+        limitSwitch.update();
         greenButton.tick();
-    }
+      }
+    case 2:
+      display.tick();
+      greenButton.tick();
+      redButton.tick();
+      break;
+    case 3:
+    case 5:
+      greenButton.tick();
+      redButton.tick();
+      break;
+    case 4:
+      if (state < 8) {
+        while (motionControl.runEvasage() || motionControl.runRivetage()) {
+          redButton.tick();
+          limitSwitch.update();
+        }
+        state++;
+        break;
+      }
+      while (motionControl.runEvasage()) {
+        redButton.tick();
+        limitSwitch.update();
+      }
+      state++;
+      showConfig();
+      break;
+    case 6:
+      delay(100);
+      while (motionControl.runRivetage()) {
+        redButton.tick();
+        limitSwitch.update();
+      }
+      motionControl.setPositionEvasage((ladder.evasage[state / 8] / 100.0) - 2.0);
+      while (motionControl.runEvasage()) {
+        redButton.tick();
+        limitSwitch.update();
+      }
+      state += 5;
+      showConfig();
+      break;
+    case 7:  //error limit switch
+      redButton.tick();
+      break;
+  }
+  if (state != 8 && limitSwitch.isPressed()) {
+    digitalWrite(RED_LED_PIN, HIGH);
+    digitalWrite(GREEN_LED_PIN, LOW);
+    motionControl.deactivate();
+    display.write(F("!!\t ERROR\t!!"));
+    display.write(F("\nLimit Switch"), 2, false);
+    //display.write(F("or Disconnected"), 2, false);
+    state = 7;
+  }
+  delay(10);
 }
 
+void updateState(uint8_t s = 0)
+{
+    switch (state % 8)
+    {
+    case 0: // manual mode
+        if (s == 1)
+        { // go to ready
 
-
- void updateState(uint8_t s = 0){
-  switch (state % 8) {
-    case 0:          // manual mode
-      if (s == 1) {  // go to ready
-      
-        if (motionControl.init()) {
-          digitalWrite(GREEN_LED_PIN, HIGH);
-          state = 1;
-          display.render();
-          return;
+            if (motionControl.init())
+            {
+                digitalWrite(GREEN_LED_PIN, HIGH);
+                state = 1;
+                display.render();
+                return;
+            }
+            digitalWrite(RED_LED_PIN, HIGH);
+            state = 7;
         }
-        digitalWrite(RED_LED_PIN, HIGH);
-        state = 7;
-      }
-      return;
-    case 1:          // ready
-    case 2:          // mode Ecarte
-      if (s == 3) {  // go to manual mode
-        motionControl.deactivate();
-        display.write(F("\n  Manual Mode"), 1);
-        digitalWrite(GREEN_LED_PIN, LOW);
-        state = 8;
-      }
-      return;
+        return;
+    case 1: // ready
+    case 2: // mode Ecarte
+        // if (s == 3)
+        // { // go to manual mode
+        //     motionControl.deactivate();
+        //     display.write(F("\n  Manual Mode"), 1);
+        //     digitalWrite(GREEN_LED_PIN, LOW);
+        //     state = 8;
+        // }
+        // return;
     case 3:
     //   if (s == 1) {  // go to deplacement rivetage
     //     motionControl.setPositionEvasage(ladder.evasage[state / 8] / 100.0);
@@ -215,19 +281,22 @@ void loop()
     //   return;
     case 4:
     case 6:
-      if (s > 1) {
-        state--;
-      }
-      return;
+        // if (s > 1)
+        // {
+        //     state--;
+        // }
+        // return;
     case 7:
-      if (s == 3) {
-        if (motionControl.init()) {
-          digitalWrite(RED_LED_PIN, LOW);
-          digitalWrite(GREEN_LED_PIN, HIGH);
-          state = 1;
-          display.render();
-        }
-      }
-      return;
-  }
+        // if (s == 3)
+        // {
+        //     if (motionControl.init())
+        //     {
+        //         digitalWrite(RED_LED_PIN, LOW);
+        //         digitalWrite(GREEN_LED_PIN, HIGH);
+        //         state = 1;
+        //         display.render();
+        //     }
+        // }
+         return;
+    }
 }

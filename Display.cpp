@@ -1,7 +1,8 @@
+#include "HardwareSerial.h"
 #include "Display.h"
 
 Display display;
-static char displayBuffer[29];
+static char displayBuffer[17];
 
 Display::Display()
     : lcd(0x20, 16, 2),
@@ -68,13 +69,13 @@ void Display::write(const char *text,
     }
 }
 
-void Display::render(){
-  menuInstance.show();
-  lcd.clear();
-  menuInstance.refresh();
+void Display::render()
+{
+    menuInstance.show();
+    lcd.clear();
+    menuInstance.refresh();
 }
 LcdMenu &Display::menu()
 {
     return menuInstance;
 }
-
