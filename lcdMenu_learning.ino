@@ -66,7 +66,7 @@ void updateState(uint8_t s = 0);
 
 void setup()
 {
-    // Serial.begin(9600);
+    Serial.begin(9600);
 
     pinMode(A0, OUTPUT);
     pinMode(A1, OUTPUT);
@@ -113,18 +113,20 @@ void setup()
     //--
     greenButton.setup(GREEN_BUTTON_PIN);
     greenButton.attachClick(updateState, 1);
-    greenButton.attachLongPressStart([]()
-                                     {
+    greenButton.attachLongPressStart([](){
+            Serial.println(F("green long press start"));
             if (state == 1) {
             state = 9;
-            } });
+            } 
+          });
     greenButton.attachLongPressStop([]()
                                     {
         if (state == 9)
         state = 1; });
     redButton.setup(RED_BUTTON_PIN);
-    redButton.attachPress([]()
-                          { motionControl.deactivate(); });
+    redButton.attachPress([](){ motionControl.deactivate(); });
+    redButton.attachLongPressStart([](){state =0;digitalWrite(RED_LED_PIN, LOW);});
+            
 }
 unsigned long lastPrint = 0;
 void loop()
@@ -134,11 +136,11 @@ void loop()
     downButton.tick();
     enterButton.tick();
 
-    // if (millis() - lastPrint > 1000) {
-    //     Serial.print("Current State: ");
-    //     Serial.println(state);
-    //     lastPrint = millis();
-    // }
+    if (millis() - lastPrint > 1000) {
+        Serial.print(F("Current State: "));
+        Serial.println(state);
+        lastPrint = millis();
+    }
     if (!state)
     {
 
@@ -162,12 +164,14 @@ void loop()
         limitSwitch.update();
         greenButton.tick();
       }
+        greenButton.tick();
 
     case 7:  //error limit switch
       redButton.tick();
       break;
   }
   if (state != 8 && limitSwitch.isPressed()) {
+    delay(500);
     digitalWrite(RED_LED_PIN, HIGH);
     digitalWrite(GREEN_LED_PIN, LOW);
     motionControl.deactivate();
@@ -175,6 +179,8 @@ void loop()
     display.write(F("\nLimit Switch"), 2, false);
     //display.write(F("or Disconnected"), 2, false);
     state = 7;
+    redButton.tick();
+    limitSwitch.update();
   }
   delay(10);
 }
