@@ -125,7 +125,11 @@ void setup()
         state = 1; });
     redButton.setup(RED_BUTTON_PIN);
     redButton.attachPress([](){ motionControl.deactivate(); });
-    redButton.attachLongPressStart([](){state =0;digitalWrite(RED_LED_PIN, LOW);});
+    redButton.attachLongPressStart([](){
+        state =0;
+        digitalWrite(RED_LED_PIN, LOW);
+        motionControl.deactivate();
+      });
             
 }
 unsigned long lastPrint = 0;
