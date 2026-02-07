@@ -1,4 +1,6 @@
+#include "HardwareSerial.h"
 #include "Arduino.h"
+#include <math.h>
 #include "MotionControl.h"
 
 MotionControl::MotionControl()
@@ -72,12 +74,13 @@ bool MotionControl::homeMotor(AccelStepper *a, uint8_t motor)
 
 void MotionControl::setPositionEvasage(float x)
 {
-  a1.moveTo(x * 715.3);
+  Serial.println(lroundf(x * 715.3f));
+  a1.moveTo(lroundf(x * 715.3f));
 }
 
 void MotionControl::setPositionRivetage(float x)
 {
-  a2.moveTo(x * 715.3);
+  a2.moveTo(lroundf(x * 715.3f));
 }
 
 float MotionControl::positionEvasage()

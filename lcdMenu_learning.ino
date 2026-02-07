@@ -46,14 +46,18 @@ OneButton redButton;
 //             //     WIDGET_RANGE(50.0f, 0.05f, 33.6f, 80.0f, "%.2f", 0, false))
 
 // );
-std::vector<uint8_t> listItems = {34, 39, 42, 47, 50, 55};
+static const std::vector<uint8_t> listItems = {34, 39, 42, 47, 50, 55};
+static void onExpanding(uint8_t index)
+{
+    if (index >= listItems.size())
+        return;
+    const float position = static_cast<float>(listItems[index]);
+    motionControl.setPositionEvasage((position - 34.0f) * 5.0f);
+    motionControl.setPositionRivetage((position - 33.6f) * 5.0f);
+}
 MENU_SCREEN(fastScreen, fastScreenItems,
             ITEM_WIDGET(
-                "Expanding", [](float position)
-                {
-                //positionEvasage = (position - 34.0) / 2;
-                motionControl.setPositionEvasage((position - 34.0) * 5.0);
-                motionControl.setPositionRivetage((position - 33.6) * 5.0); },
+                "Expanding", onExpanding,
                 WIDGET_LIST(listItems, 0, "%d", 0, false))
 
 );
