@@ -5,7 +5,7 @@ Display display;
 static char displayBuffer[17];
 
 Display::Display()
-    : lcd(0x20, 16, 2),//0x20
+    : lcd(0x27, 16, 2), // 0x20
       lcdAdapter(&lcd),
       renderer(&lcdAdapter, 16, 2),
       menuInstance(renderer)
@@ -79,4 +79,3 @@ LcdMenu &Display::menu()
 {
     return menuInstance;
 }
-
