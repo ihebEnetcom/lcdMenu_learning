@@ -74,7 +74,7 @@ bool MotionControl::homeMotor(AccelStepper *a, uint8_t motor)
 
 void MotionControl::setPositionEvasage(float x)
 {
-  Serial.println(lroundf(x * 715.3f));
+  
   a1.moveTo(lroundf(x * 715.3f));
 }
 
@@ -115,6 +115,3 @@ void MotionControl::deactivate()
 {
   setAllMotor(LOW);
 }
-
-
-

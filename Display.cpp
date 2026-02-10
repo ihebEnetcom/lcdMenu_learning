@@ -1,11 +1,9 @@
-#include "HardwareSerial.h"
 #include "Display.h"
 
 Display display;
-static char displayBuffer[17];
 
 Display::Display()
-    : lcd(0x27, 16, 2), // 0x20
+    : lcd(0x20, 16, 2), // 0x20
       lcdAdapter(&lcd),
       renderer(&lcdAdapter, 16, 2),
       menuInstance(renderer)
@@ -21,6 +19,7 @@ void Display::write(const __FlashStringHelper *text,
                     uint8_t level,
                     bool clear)
 {
+    char displayBuffer[17];
     strncpy_P(displayBuffer, (const char *)text, sizeof(displayBuffer));
     displayBuffer[sizeof(displayBuffer) - 1] = '\0';
     write(displayBuffer, level, clear);
