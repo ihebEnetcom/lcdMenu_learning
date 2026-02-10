@@ -1,6 +1,5 @@
 #include <LcdMenu.h>
 #include <MenuScreen.h>
-#include <ItemSubMenu.h>
 #include <ItemWidget.h>
 #include <ItemCommand.h>
 #include <widget/WidgetRange.h>
@@ -27,6 +26,86 @@ OneButton enterButton;
 
 OneButton greenButton;
 OneButton redButton;
+
+extern MenuScreen *modeDroitScreen;
+extern MenuScreen *fastScreen;
+
+static uint8_t mainMenuIndex = 0;
+static bool inMainMenu = true;
+
+static void renderMainMenu()
+{
+    if (mainMenuIndex == 0)
+    {
+        display.write(F(">mode droit\n mode rapide"), 0, true);
+    }
+    else
+    {
+        display.write(F(" mode droit\n>mode rapide"), 0, true);
+    }
+}
+
+static void enterSelectedMenu()
+{
+    inMainMenu = false;
+    if (mainMenuIndex == 0)
+        display.menu().setScreen(modeDroitScreen);
+    else
+        display.menu().setScreen(fastScreen);
+    display.render();
+}
+
+static void handleUp()
+{
+    if (inMainMenu)
+    {
+        mainMenuIndex = mainMenuIndex ? 0 : 1;
+        renderMainMenu();
+    }
+    else
+    {
+        display.menu().process(UP);
+    }
+}
+
+static void handleDown()
+{
+    if (inMainMenu)
+    {
+        mainMenuIndex = mainMenuIndex ? 0 : 1;
+        renderMainMenu();
+    }
+    else
+    {
+        display.menu().process(DOWN);
+    }
+}
+
+static void handleEnter()
+{
+    if (inMainMenu)
+    {
+        enterSelectedMenu();
+    }
+    else
+    {
+        display.menu().process(ENTER);
+    }
+}
+
+static void handleBack()
+{
+    if (inMainMenu)
+        return;
+    MenuRenderer *renderer = display.menu().getRenderer();
+    if (renderer && renderer->isInEditMode())
+    {
+        display.menu().process(BACK);
+        return;
+    }
+    inMainMenu = true;
+    renderMainMenu();
+}
 
 MENU_SCREEN(modeDroitScreen, modeDroitItems,
             ITEM_WIDGET(
@@ -159,11 +238,6 @@ MENU_SCREEN(fastScreen, fastScreenItems,
 
 );
 
-MENU_SCREEN(mainScreen, mainScreenItems,
-            ITEM_SUBMENU("d", modeDroitScreen),
-            ITEM_SUBMENU("r", fastScreen), 
-            );
-
 void updateState(uint8_t s = 0);
 
 void setup()
@@ -189,28 +263,19 @@ void setup()
     limitSwitch.interval(5);
     limitSwitch.setPressedState(HIGH);
 
-    display.menu().setScreen(mainScreen);
+    renderMainMenu();
     upButton.setup(UP_PIN, INPUT_PULLUP, true);
 
-    upButton.attachClick([](LcdMenu *m)
-                         { m->process(UP); }, &display.menu());
-
-    upButton.attachLongPressStart([](LcdMenu *m)
-                                  { m->process(UP); }, &display.menu());
+    upButton.attachClick(handleUp);
+    upButton.attachLongPressStart(handleUp);
     //----
     downButton.setup(DOWN_PIN, INPUT_PULLUP, true);
-    downButton.attachClick([](LcdMenu *m)
-                           { m->process(DOWN); }, &display.menu());
-
-    downButton.attachLongPressStart([](LcdMenu *m)
-                                    { m->process(DOWN); }, &display.menu());
+    downButton.attachClick(handleDown);
+    downButton.attachLongPressStart(handleDown);
     //---
     enterButton.setup(ENTER_PIN, INPUT_PULLUP, true);
-    enterButton.attachClick([](LcdMenu *m)
-                            { m->process(ENTER); }, &display.menu());
-
-    enterButton.attachLongPressStart([](LcdMenu *m)
-                                     { m->process(BACK); }, &display.menu());
+    enterButton.attachClick(handleEnter);
+    enterButton.attachLongPressStart(handleBack);
     //--
     greenButton.setup(GREEN_BUTTON_PIN);
     greenButton.attachClick(updateState, 1);
@@ -301,6 +366,7 @@ void updateState(uint8_t s = 0)
                 digitalWrite(GREEN_LED_PIN, HIGH);
                 state = 1;
                 display.render();
+                renderMainMenu();
                 return;
             }
             digitalWrite(RED_LED_PIN, HIGH);

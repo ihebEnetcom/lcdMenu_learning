@@ -19,10 +19,46 @@ void Display::write(const __FlashStringHelper *text,
                     uint8_t level,
                     bool clear)
 {
-    char displayBuffer[17];
-    strncpy_P(displayBuffer, (const char *)text, sizeof(displayBuffer));
-    displayBuffer[sizeof(displayBuffer) - 1] = '\0';
-    write(displayBuffer, level, clear);
+    lcd.noBlink();
+    if (clear)
+        lcd.clear();
+
+    if (level == 4)
+        lcd.blink();
+    else if (level)
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            renderer.moveCursor(0, i);
+            renderer.draw((level == 1) ? '#' : '!');
+            renderer.moveCursor(15, i);
+            renderer.draw((level == 1) ? '#' : '!');
+        }
+
+    uint8_t c = 1, r = 0;
+    const uint8_t maxRows = 4;
+    PGM_P p = reinterpret_cast<PGM_P>(text);
+    while (true)
+    {
+        char ch = pgm_read_byte(p++);
+        if (ch == '\0')
+            break;
+        if (c == 15 || ch == '\n')
+        {
+            c = 1;
+            r++;
+        }
+        if (r == maxRows)
+            break;
+        if (ch == '\n')
+            continue;
+        if (ch == '\t')
+        {
+            c += 2;
+            continue;
+        }
+        renderer.moveCursor(c++, r);
+        renderer.draw(ch);
+    }
 }
 
 void Display::write(const char *text,
